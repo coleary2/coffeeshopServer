@@ -6,6 +6,22 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+const menuRouter = require('./routes/menuRouter');
+const commentRouter = require('./routes/commentRouter');
+
+const mongoose = require('mongoose');
+
+const url = 'mongodb://localhost:27017/coffeeshop';
+const connect = mongoose.connect(url, {
+  useCreateIndex: true,
+  useFindAndModify: false,
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
+
+connect.then(() => console.log('Connected correctly to server'),
+  err => console.log(err)
+);
 
 var app = express();
 
@@ -21,6 +37,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/menus', menuRouter);
+app.use('/comments', commentRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
