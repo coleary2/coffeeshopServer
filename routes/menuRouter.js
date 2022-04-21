@@ -1,5 +1,6 @@
 const express = require('express');
 const Menu = require('../models/menu');
+const authenticate = require('../authenticate');
 
 const menuRouter = express.Router();
 
@@ -13,7 +14,7 @@ menuRouter.route('/')
     })
     .catch(err => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     Menu.create(req.body)
     .then(menu => {
         console.log('Menu Created ', menu);
@@ -23,11 +24,11 @@ menuRouter.route('/')
     })
     .catch(err => next(err));
 })
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /menus');
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Menu.deleteMany()
     .then(response => {
         res.statusCode = 200;
@@ -47,11 +48,11 @@ menuRouter.route('/:menuId')
     })
     .catch(err => next(err));
 })
-.post((req, res) => {
+.post(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /menus/${req.params.menuId}`);
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res, next) => {
     Menu.findByIdAndUpdate(req.params.menuId, {
         $set: req.body
     }, { new: true })
@@ -62,7 +63,7 @@ menuRouter.route('/:menuId')
     })
     .catch(err => next(err));
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Menu.findByIdAndDelete(req.params.menuId)
     .then(response => {
         res.statusCode = 200;

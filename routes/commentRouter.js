@@ -1,5 +1,6 @@
 const express = require('express');
 const Comment = require('../models/comment');
+const authenticate = require('../authenticate');
 
 const commentRouter = express.Router();
 
@@ -13,7 +14,7 @@ commentRouter.route('/')
     })
     .catch(err => next(err));
 })
-.post((req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     Comment.create(req.body)
     .then(comment => {
         console.log('Comment Created ', comment);
@@ -23,11 +24,11 @@ commentRouter.route('/')
     })
     .catch(err => next(err));
 })
-.put((req, res) => {
+.put(authenticate.verifyUser, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /comments');
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Comment.deleteMany()
     .then(response => {
         res.statusCode = 200;
@@ -47,11 +48,11 @@ commentRouter.route('/:commentId')
     })
     .catch(err => next(err));
 })
-.post((req, res) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /comments/${req.params.commentId}`);
 })
-.put((req, res, next) => {
+.put(authenticate.verifyUser, (req, res) => {
     Comment.findByIdAndUpdate(req.params.commentId, {
         $set: req.body
     }, { new: true })
@@ -62,7 +63,7 @@ commentRouter.route('/:commentId')
     })
     .catch(err => next(err));
 })
-.delete((req, res, next) => {
+.delete(authenticate.verifyUser, (req, res, next) => {
     Comment.findByIdAndDelete(req.params.commentId)
     .then(response => {
         res.statusCode = 200;
