@@ -15,7 +15,7 @@ locationRouter.route('/')
     })
     .catch(err => next(err));
 })
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Location.create(req.body)
     .then(location => {
         console.log('Location Created ', location);
@@ -29,7 +29,7 @@ locationRouter.route('/')
     res.statusCode = 403;
     res.end('PUT operation not supported on /locations');
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Location.deleteMany()
     .then(response => {
         res.statusCode = 200;
@@ -54,7 +54,7 @@ locationRouter.route('/:locationId')
     res.statusCode = 403;
     res.end(`POST operation not supported on /locations/${req.params.locationId}`);
 })
-.put(authenticate.verifyUser, (req, res) => {
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     Location.findByIdAndUpdate(req.params.locationId, {
         $set: req.body
     }, { new: true })
@@ -65,7 +65,7 @@ locationRouter.route('/:locationId')
     })
     .catch(err => next(err));
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Location.findByIdAndDelete(req.params.locationId)
     .then(response => {
         res.statusCode = 200;
@@ -117,7 +117,7 @@ locationRouter.route('/:locationId/comments')
     res.statusCode = 403;
     res.end(`PUT operation not supported on /locations/${req.params.locationId}/comments`);
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Location.findById(req.params.locationId)
     .then(location => {
         if (location) {
@@ -168,19 +168,25 @@ locationRouter.route('/:locationId/comments/:commentId')
     Location.findById(req.params.locationId)
     .then(location => {
         if (location && location.comments.id(req.params.commentId)) {
-            if (req.body.rating) {
-                location.comments.id(req.params.commentId).rating = req.body.rating;
+            if((location.comments.id(req.params.commentId).author._id).equals(req.user._id)) {
+                if (req.body.rating) {
+                    location.comments.id(req.params.commentId).rating = req.body.rating;
+                }
+                if (req.body.text) {
+                    location.comments.id(req.params.commentId).text = req.body.text;
+                }
+                location.save()
+                .then(location => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(location);
+                })
+                .catch(err => next(err));
+            } else {
+                err = new Error ('You are not authorized to upadate this comment!');
+                err.status = 403;
+                return next(err);
             }
-            if (req.body.text) {
-                location.comments.id(req.params.commentId).text = req.body.text;
-            }
-            location.save()
-            .then(location => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(location);
-            })
-            .catch(err => next(err));
         } else if (!location) {
             err = new Error(`Location ${req.params.locationId} not found`);
             err.status = 404;
@@ -197,14 +203,20 @@ locationRouter.route('/:locationId/comments/:commentId')
     Location.findById(req.params.locationId)
     .then(location => {
         if (location && location.comments.id(req.params.commentId)) {
-            location.comments.id(req.params.commentId).remove();
-            location.save()
-            .then(location => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(location);
-            })
-            .catch(err => next(err));
+            if((location.comments.id(req.params.commentId).author._id).equals(req.user._id)) {
+                location.comments.id(req.params.commentId).remove();
+                location.save()
+                .then(location => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json(location);
+                })
+                .catch(err => next(err));
+            } else {
+                err = new Error('You are not authorized to delete this comment!');
+                err.status = 403;
+                return next(err);
+            }
         } else if (!location) {
             err = new Error(`Location ${req.params.locationId} not found`);
             err.status = 404;
