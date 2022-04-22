@@ -26,7 +26,7 @@ const locationSchema = new Schema({
         required: true
     },
     address: {
-        type: PostalAddress,
+        type: String,
         required: true
     },
     telephone: {

@@ -1,11 +1,13 @@
 const express = require('express');
 const Menu = require('../models/menu');
 const authenticate = require('../authenticate');
+const cors = require('./cors');
 
 const menuRouter = express.Router();
 
 menuRouter.route('/')
-.get((req, res, next) => {
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     Menu.find()
     .then(menus => {
         res.statusCode =200;
@@ -14,7 +16,7 @@ menuRouter.route('/')
     })
     .catch(err => next(err));
 })
-.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Menu.create(req.body)
     .then(menu => {
         console.log('Menu Created ', menu);
@@ -24,11 +26,11 @@ menuRouter.route('/')
     })
     .catch(err => next(err));
 })
-.put(authenticate.verifyUser, (req, res) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /menus');
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Menu.deleteMany()
     .then(response => {
         res.statusCode = 200;
@@ -39,7 +41,8 @@ menuRouter.route('/')
 });
 
 menuRouter.route('/:menuId')
-.get((req, res, next) => {
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, (req, res, next) => {
     Menu.findById(req.params.menuId)
     .then(menu => {
         res.statusCode = 200;
@@ -48,11 +51,11 @@ menuRouter.route('/:menuId')
     })
     .catch(err => next(err));
 })
-.post(authenticate.verifyUser, (req, res) => {
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end(`POST operation not supported on /menus/${req.params.menuId}`);
 })
-.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Menu.findByIdAndUpdate(req.params.menuId, {
         $set: req.body
     }, { new: true })
@@ -63,7 +66,7 @@ menuRouter.route('/:menuId')
     })
     .catch(err => next(err));
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Menu.findByIdAndDelete(req.params.menuId)
     .then(response => {
         res.statusCode = 200;
