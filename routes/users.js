@@ -2,19 +2,28 @@ const express = require('express');
 const User = require('../models/user');
 const passport = require('passport');
 const authenticate = require('../authenticate');
-const cors = require('cors');
+const cors = require('./cors');
 
 const router = express.Router();
 
+router.get('/facebook/token', passport.authenticate('facebook-token'), (req, res) => {
+    if (req.user) {
+        const token = authenticate.getToken({_id: req.user._id});
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success: true, token: token, status: 'You are successfully logged in!'});
+    }
+});
+
 /* GET users listing. */
-router.get('/', cors.corsWithOptions,  authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
-  User.find()
-  .then(users => {
-      res.statusCode = 200;
-      res.setHeader('Content-Type', 'application/json');
-      res.json(users);
-  })
-  .catch(err => next(err));
+router.get('/', cors.corsWithOptions,  authenticate.verifyUser, function(req, res, next) {
+    if (req.user.admin) {
+        return User.find();
+    } else {
+        const err = new Error('You are not authorized!');
+        err.status = 403;
+        return next(err);
+    }
 });
 
 router.post('/signup', cors.corsWithOptions, (req, res) => {
